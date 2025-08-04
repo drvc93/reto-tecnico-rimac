@@ -1,0 +1,4853 @@
+{
+  "C:\\Users\\danie\\OneDrive\\Documentos\\reto tecnico\\serverless.yml": {
+    "versionFramework": "4.17.2",
+    "servicePath": "C:\\Users\\danie\\OneDrive\\Documentos\\reto tecnico\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "rimac-appointments",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "region": "us-east-1",
+        "environment": {
+          "APPOINTMENTS_TABLE": "Appointments",
+          "SNS_TOPIC_PE": {
+            "Ref": "AppointmentTopicPE"
+          },
+          "SNS_TOPIC_CL": {
+            "Ref": "AppointmentTopicCL"
+          },
+          "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+          "RDS_PORT": "3306",
+          "RDS_USER": "admin",
+          "RDS_PASSWORD": "<REDACTED>",
+          "RDS_DATABASE": "mysqle_pe"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "sns:Publish"
+                ],
+                "Resource": [
+                  "arn:aws:sns:us-east-1:*:appointment-topic-pe",
+                  "arn:aws:sns:us-east-1:*:appointment-topic-cl"
+                ]
+              }
+            ]
+          }
+        },
+        "stage": "dev",
+        "versionFunctions": true,
+        "compiledCloudFormationTemplate": {
+          "AWSTemplateFormatVersion": "2010-09-09",
+          "Description": "The AWS CloudFormation template for this Serverless application",
+          "Resources": {
+            "AppLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-app"
+              }
+            },
+            "SwaggerDocsLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-swaggerDocs"
+              }
+            },
+            "CreateAppointmentLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-createAppointment"
+              }
+            },
+            "GetAppointmentsByInsuredIdLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-getAppointmentsByInsuredId"
+              }
+            },
+            "AppointmentPELogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-appointmentPE"
+              }
+            },
+            "AppointmentCLLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-appointmentCL"
+              }
+            },
+            "ConfirmAppointmentLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/rimac-appointments-dev-confirmAppointment"
+              }
+            },
+            "IamRoleLambdaExecution": {
+              "Type": "AWS::IAM::Role",
+              "Properties": {
+                "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": [
+                          "lambda.amazonaws.com"
+                        ]
+                      },
+                      "Action": [
+                        "sts:AssumeRole"
+                      ]
+                    }
+                  ]
+                },
+                "Policies": [
+                  {
+                    "PolicyName": {
+                      "Fn::Join": [
+                        "-",
+                        [
+                          "rimac-appointments",
+                          "dev",
+                          "lambda"
+                        ]
+                      ]
+                    },
+                    "PolicyDocument": {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:CreateLogStream",
+                            "logs:CreateLogGroup",
+                            "logs:TagResource"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rimac-appointments-dev*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:PutLogEvents"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rimac-appointments-dev*:*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sns:Publish"
+                          ],
+                          "Resource": [
+                            "arn:aws:sns:us-east-1:*:appointment-topic-pe",
+                            "arn:aws:sns:us-east-1:*:appointment-topic-cl"
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:ReceiveMessage",
+                            "sqs:DeleteMessage",
+                            "sqs:GetQueueAttributes"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::GetAtt": [
+                                "AppointmentQueuePE",
+                                "Arn"
+                              ]
+                            },
+                            {
+                              "Fn::GetAtt": [
+                                "AppointmentQueueCL",
+                                "Arn"
+                              ]
+                            },
+                            {
+                              "Fn::GetAtt": [
+                                "AppointmentConfirmationQueue",
+                                "Arn"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "Path": "/",
+                "RoleName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "rimac-appointments",
+                      "dev",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "lambdaRole"
+                    ]
+                  ]
+                }
+              }
+            },
+            "AppLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/server.handler",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-app",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "AppLogGroup"
+              ]
+            },
+            "SwaggerDocsLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/server.handler",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-swaggerDocs",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "SwaggerDocsLogGroup"
+              ]
+            },
+            "CreateAppointmentLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/handlers/appointment.createAppointment",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-createAppointment",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "CreateAppointmentLogGroup"
+              ]
+            },
+            "GetAppointmentsByInsuredIdLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/handlers/appointment.getAppointmentsByInsuredId",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-getAppointmentsByInsuredId",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "GetAppointmentsByInsuredIdLogGroup"
+              ]
+            },
+            "AppointmentPELambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/interfaces/events/SqsHandlers.handleAppointmentPE",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-appointmentPE",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "AppointmentPELogGroup"
+              ]
+            },
+            "AppointmentCLLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/interfaces/events/SqsHandlers.handleAppointmentCL",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-appointmentCL",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "AppointmentCLLogGroup"
+              ]
+            },
+            "ConfirmAppointmentLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                  "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+                },
+                "Handler": "src/interfaces/events/ConfirmationHandler.handle",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "rimac-appointments-dev-confirmAppointment",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "APPOINTMENTS_TABLE": "Appointments",
+                    "SNS_TOPIC_PE": {
+                      "Ref": "AppointmentTopicPE"
+                    },
+                    "SNS_TOPIC_CL": {
+                      "Ref": "AppointmentTopicCL"
+                    },
+                    "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                    "RDS_PORT": "3306",
+                    "RDS_USER": "admin",
+                    "RDS_PASSWORD": "<REDACTED>",
+                    "RDS_DATABASE": "mysqle_pe",
+                    "NODE_OPTIONS": "--enable-source-maps"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "ConfirmAppointmentLogGroup"
+              ]
+            },
+            "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "AppLambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "SwaggerDocsLambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "CreateAppointmentLambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "GetAppointmentsByInsuredIdLambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "AppointmentPELambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "AppointmentCLLambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "ConfirmAppointmentLambdaFunction"
+                },
+                "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+              }
+            },
+            "ApiGatewayRestApi": {
+              "Type": "AWS::ApiGateway::RestApi",
+              "Properties": {
+                "Name": "dev-rimac-appointments",
+                "EndpointConfiguration": {
+                  "Types": [
+                    "EDGE"
+                  ]
+                },
+                "Policy": ""
+              }
+            },
+            "ApiGatewayResourceAppointments": {
+              "Type": "AWS::ApiGateway::Resource",
+              "Properties": {
+                "ParentId": {
+                  "Fn::GetAtt": [
+                    "ApiGatewayRestApi",
+                    "RootResourceId"
+                  ]
+                },
+                "PathPart": "appointments",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayResourceAppointmentsInsuredidVar": {
+              "Type": "AWS::ApiGateway::Resource",
+              "Properties": {
+                "ParentId": {
+                  "Ref": "ApiGatewayResourceAppointments"
+                },
+                "PathPart": "{insuredId}",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayResourceDocs": {
+              "Type": "AWS::ApiGateway::Resource",
+              "Properties": {
+                "ParentId": {
+                  "Fn::GetAtt": [
+                    "ApiGatewayRestApi",
+                    "RootResourceId"
+                  ]
+                },
+                "PathPart": "docs",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodAppointmentsInsuredidVarOptions": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "AuthorizationType": "NONE",
+                "HttpMethod": "OPTIONS",
+                "MethodResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": true,
+                      "method.response.header.Access-Control-Allow-Headers": true,
+                      "method.response.header.Access-Control-Allow-Methods": true
+                    },
+                    "ResponseModels": {}
+                  }
+                ],
+                "RequestParameters": {},
+                "Integration": {
+                  "Type": "MOCK",
+                  "RequestTemplates": {
+                    "application/json": "{statusCode:200}"
+                  },
+                  "ContentHandling": "CONVERT_TO_TEXT",
+                  "IntegrationResponses": [
+                    {
+                      "StatusCode": "200",
+                      "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                      },
+                      "ResponseTemplates": {
+                        "application/json": ""
+                      }
+                    }
+                  ]
+                },
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceAppointmentsInsuredidVar"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodAppointmentsOptions": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "AuthorizationType": "NONE",
+                "HttpMethod": "OPTIONS",
+                "MethodResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": true,
+                      "method.response.header.Access-Control-Allow-Headers": true,
+                      "method.response.header.Access-Control-Allow-Methods": true
+                    },
+                    "ResponseModels": {}
+                  }
+                ],
+                "RequestParameters": {},
+                "Integration": {
+                  "Type": "MOCK",
+                  "RequestTemplates": {
+                    "application/json": "{statusCode:200}"
+                  },
+                  "ContentHandling": "CONVERT_TO_TEXT",
+                  "IntegrationResponses": [
+                    {
+                      "StatusCode": "200",
+                      "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+                      },
+                      "ResponseTemplates": {
+                        "application/json": ""
+                      }
+                    }
+                  ]
+                },
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceAppointments"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodDocsOptions": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "AuthorizationType": "NONE",
+                "HttpMethod": "OPTIONS",
+                "MethodResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": true,
+                      "method.response.header.Access-Control-Allow-Headers": true,
+                      "method.response.header.Access-Control-Allow-Methods": true
+                    },
+                    "ResponseModels": {}
+                  }
+                ],
+                "RequestParameters": {},
+                "Integration": {
+                  "Type": "MOCK",
+                  "RequestTemplates": {
+                    "application/json": "{statusCode:200}"
+                  },
+                  "ContentHandling": "CONVERT_TO_TEXT",
+                  "IntegrationResponses": [
+                    {
+                      "StatusCode": "200",
+                      "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                      },
+                      "ResponseTemplates": {
+                        "application/json": ""
+                      }
+                    }
+                  ]
+                },
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceDocs"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodAppointmentsPost": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "HttpMethod": "POST",
+                "RequestParameters": {},
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceAppointments"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ApiKeyRequired": "<REDACTED>",
+                "AuthorizationType": "NONE",
+                "Integration": {
+                  "IntegrationHttpMethod": "POST",
+                  "Type": "AWS_PROXY",
+                  "Uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Fn::GetAtt": [
+                            "CreateAppointmentLambdaFunction",
+                            "Arn"
+                          ]
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "MethodResponses": []
+              },
+              "DependsOn": [
+                "CreateAppointmentLambdaPermissionApiGateway"
+              ]
+            },
+            "ApiGatewayMethodAppointmentsInsuredidVarGet": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "HttpMethod": "GET",
+                "RequestParameters": {},
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceAppointmentsInsuredidVar"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ApiKeyRequired": "<REDACTED>",
+                "AuthorizationType": "NONE",
+                "Integration": {
+                  "IntegrationHttpMethod": "POST",
+                  "Type": "AWS_PROXY",
+                  "Uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Fn::GetAtt": [
+                            "GetAppointmentsByInsuredIdLambdaFunction",
+                            "Arn"
+                          ]
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "MethodResponses": []
+              },
+              "DependsOn": [
+                "GetAppointmentsByInsuredIdLambdaPermissionApiGateway"
+              ]
+            },
+            "ApiGatewayMethodDocsGet": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "HttpMethod": "GET",
+                "RequestParameters": {},
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceDocs"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ApiKeyRequired": "<REDACTED>",
+                "AuthorizationType": "NONE",
+                "Integration": {
+                  "IntegrationHttpMethod": "POST",
+                  "Type": "AWS_PROXY",
+                  "Uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Fn::GetAtt": [
+                            "SwaggerDocsLambdaFunction",
+                            "Arn"
+                          ]
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "MethodResponses": []
+              },
+              "DependsOn": [
+                "SwaggerDocsLambdaPermissionApiGateway"
+              ]
+            },
+            "ApiGatewayDeployment1754346858539": {
+              "Type": "AWS::ApiGateway::Deployment",
+              "Properties": {
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "StageName": "dev"
+              },
+              "DependsOn": [
+                "ApiGatewayMethodAppointmentsInsuredidVarOptions",
+                "ApiGatewayMethodAppointmentsOptions",
+                "ApiGatewayMethodDocsOptions",
+                "ApiGatewayMethodAppointmentsPost",
+                "ApiGatewayMethodAppointmentsInsuredidVarGet",
+                "ApiGatewayMethodDocsGet",
+                "ApiGatewayMethodAppointmentsPost",
+                "ApiGatewayMethodDocsGet",
+                "ApiGatewayMethodAppointmentsPost",
+                "ApiGatewayMethodAppointmentsInsuredidVarGet"
+              ]
+            },
+            "AppLambdaPermissionApiGateway": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "AppLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "ApiGatewayRestApi"
+                      },
+                      "/*/*"
+                    ]
+                  ]
+                }
+              }
+            },
+            "SwaggerDocsLambdaPermissionApiGateway": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "SwaggerDocsLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "ApiGatewayRestApi"
+                      },
+                      "/*/*"
+                    ]
+                  ]
+                }
+              }
+            },
+            "CreateAppointmentLambdaPermissionApiGateway": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "CreateAppointmentLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "ApiGatewayRestApi"
+                      },
+                      "/*/*"
+                    ]
+                  ]
+                }
+              }
+            },
+            "GetAppointmentsByInsuredIdLambdaPermissionApiGateway": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "GetAppointmentsByInsuredIdLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "ApiGatewayRestApi"
+                      },
+                      "/*/*"
+                    ]
+                  ]
+                }
+              }
+            },
+            "AppointmentPEEventSourceMappingSQSAppointmentQueuePE": {
+              "Type": "AWS::Lambda::EventSourceMapping",
+              "DependsOn": [
+                "IamRoleLambdaExecution"
+              ],
+              "Properties": {
+                "BatchSize": 10,
+                "EventSourceArn": {
+                  "Fn::GetAtt": [
+                    "AppointmentQueuePE",
+                    "Arn"
+                  ]
+                },
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "AppointmentPELambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Enabled": true
+              }
+            },
+            "AppointmentCLEventSourceMappingSQSAppointmentQueueCL": {
+              "Type": "AWS::Lambda::EventSourceMapping",
+              "DependsOn": [
+                "IamRoleLambdaExecution"
+              ],
+              "Properties": {
+                "BatchSize": 10,
+                "EventSourceArn": {
+                  "Fn::GetAtt": [
+                    "AppointmentQueueCL",
+                    "Arn"
+                  ]
+                },
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "AppointmentCLLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Enabled": true
+              }
+            },
+            "ConfirmAppointmentEventSourceMappingSQSAppointmentConfirmationQueue": {
+              "Type": "AWS::Lambda::EventSourceMapping",
+              "DependsOn": [
+                "IamRoleLambdaExecution"
+              ],
+              "Properties": {
+                "BatchSize": 10,
+                "EventSourceArn": {
+                  "Fn::GetAtt": [
+                    "AppointmentConfirmationQueue",
+                    "Arn"
+                  ]
+                },
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "ConfirmAppointmentLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Enabled": true
+              }
+            },
+            "AppointmentsTable": {
+              "Type": "AWS::DynamoDB::Table",
+              "Properties": {
+                "TableName": "Appointments",
+                "AttributeDefinitions": [
+                  {
+                    "AttributeName": "insuredId",
+                    "AttributeType": "S"
+                  },
+                  {
+                    "AttributeName": "scheduleId",
+                    "AttributeType": "N"
+                  }
+                ],
+                "KeySchema": [
+                  {
+                    "AttributeName": "insuredId",
+                    "KeyType": "HASH"
+                  },
+                  {
+                    "AttributeName": "scheduleId",
+                    "KeyType": "RANGE"
+                  }
+                ],
+                "BillingMode": "PAY_PER_REQUEST"
+              }
+            },
+            "AppointmentTopicPE": {
+              "Type": "AWS::SNS::Topic",
+              "Properties": {
+                "TopicName": "appointment-topic-pe"
+              }
+            },
+            "AppointmentTopicCL": {
+              "Type": "AWS::SNS::Topic",
+              "Properties": {
+                "TopicName": "appointment-topic-cl"
+              }
+            },
+            "AppointmentQueuePE": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "appointment-queue-pe"
+              }
+            },
+            "AppointmentQueuePEPolicy": {
+              "Type": "AWS::SQS::QueuePolicy",
+              "Properties": {
+                "Queues": [
+                  {
+                    "Ref": "AppointmentQueuePE"
+                  }
+                ],
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": "SQS:SendMessage",
+                      "Resource": {
+                        "Fn::GetAtt": [
+                          "AppointmentQueuePE",
+                          "Arn"
+                        ]
+                      },
+                      "Condition": {
+                        "ArnEquals": {
+                          "aws:SourceArn": {
+                            "Ref": "AppointmentTopicPE"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "SNSSubscriptionPE": {
+              "Type": "AWS::SNS::Subscription",
+              "Properties": {
+                "TopicArn": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "Protocol": "sqs",
+                "Endpoint": {
+                  "Fn::GetAtt": [
+                    "AppointmentQueuePE",
+                    "Arn"
+                  ]
+                },
+                "FilterPolicy": {
+                  "countryISO": [
+                    "PE"
+                  ]
+                }
+              }
+            },
+            "AppointmentQueueCL": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "appointment-queue-cl"
+              }
+            },
+            "AppointmentQueueCLPolicy": {
+              "Type": "AWS::SQS::QueuePolicy",
+              "Properties": {
+                "Queues": [
+                  {
+                    "Ref": "AppointmentQueueCL"
+                  }
+                ],
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": "SQS:SendMessage",
+                      "Resource": {
+                        "Fn::GetAtt": [
+                          "AppointmentQueueCL",
+                          "Arn"
+                        ]
+                      },
+                      "Condition": {
+                        "ArnEquals": {
+                          "aws:SourceArn": {
+                            "Ref": "AppointmentTopicCL"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "SNSSubscriptionCL": {
+              "Type": "AWS::SNS::Subscription",
+              "Properties": {
+                "TopicArn": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "Protocol": "sqs",
+                "Endpoint": {
+                  "Fn::GetAtt": [
+                    "AppointmentQueueCL",
+                    "Arn"
+                  ]
+                },
+                "FilterPolicy": {
+                  "countryISO": [
+                    "CL"
+                  ]
+                }
+              }
+            },
+            "AppointmentConfirmationQueue": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "appointment-confirmation-queue"
+              }
+            },
+            "AppointmentConfirmationQueuePolicy": {
+              "Type": "AWS::SQS::QueuePolicy",
+              "Properties": {
+                "Queues": [
+                  {
+                    "Ref": "AppointmentConfirmationQueue"
+                  }
+                ],
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": "SQS:SendMessage",
+                      "Resource": {
+                        "Fn::GetAtt": [
+                          "AppointmentConfirmationQueue",
+                          "Arn"
+                        ]
+                      },
+                      "Condition": {
+                        "ArnEquals": {
+                          "aws:SourceArn": "arn:aws:events:us-east-1:257505038232:rule/appointment-completed-rule"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "AppointmentCompletedRule": {
+              "Type": "AWS::Events::Rule",
+              "Properties": {
+                "Name": "appointment-completed-rule",
+                "EventPattern": {
+                  "source": [
+                    "appointment.service"
+                  ],
+                  "detail-type": [
+                    "AppointmentCompleted"
+                  ]
+                },
+                "Targets": [
+                  {
+                    "Arn": {
+                      "Fn::GetAtt": [
+                        "AppointmentConfirmationQueue",
+                        "Arn"
+                      ]
+                    },
+                    "Id": "SendToConfirmationQueue"
+                  }
+                ]
+              }
+            }
+          },
+          "Outputs": {
+            "ServerlessDeploymentBucketName": {
+              "Value": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-ServerlessDeploymentBucketName"
+              }
+            },
+            "AppLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-AppLambdaFunctionQualifiedArn"
+              }
+            },
+            "SwaggerDocsLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-SwaggerDocsLambdaFunctionQualifiedArn"
+              }
+            },
+            "CreateAppointmentLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-CreateAppointmentLambdaFunctionQualifiedArn"
+              }
+            },
+            "GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn"
+              }
+            },
+            "AppointmentPELambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-AppointmentPELambdaFunctionQualifiedArn"
+              }
+            },
+            "AppointmentCLLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-AppointmentCLLambdaFunctionQualifiedArn"
+              }
+            },
+            "ConfirmAppointmentLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8"
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-ConfirmAppointmentLambdaFunctionQualifiedArn"
+              }
+            },
+            "ServiceEndpoint": {
+              "Description": "URL of the service endpoint",
+              "Value": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "https://",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    ".execute-api.",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ".",
+                    {
+                      "Ref": "AWS::URLSuffix"
+                    },
+                    "/dev"
+                  ]
+                ]
+              },
+              "Export": {
+                "Name": "sls-rimac-appointments-dev-ServiceEndpoint"
+              }
+            }
+          }
+        },
+        "vpc": {}
+      },
+      "functions": {
+        "app": {
+          "handler": "src/server.handler",
+          "events": [
+            {
+              "http": {
+                "path": "appointments",
+                "method": "post",
+                "integration": "AWS_PROXY"
+              }
+            },
+            {
+              "http": {
+                "path": "appointments/{insuredId}",
+                "method": "get",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "OPTIONS",
+                    "GET"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Amzn-Trace-Id"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "integration": "AWS_PROXY"
+              }
+            },
+            {
+              "http": {
+                "path": "docs",
+                "method": "get",
+                "integration": "AWS_PROXY"
+              }
+            },
+            {
+              "http": {
+                "path": "appointments",
+                "method": "post",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "OPTIONS",
+                    "POST"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Amzn-Trace-Id"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "integration": "AWS_PROXY"
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-app",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I"
+        },
+        "swaggerDocs": {
+          "handler": "src/server.handler",
+          "events": [
+            {
+              "http": {
+                "path": "docs",
+                "method": "get",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "OPTIONS",
+                    "GET"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Amzn-Trace-Id"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "integration": "AWS_PROXY"
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-swaggerDocs",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8"
+        },
+        "createAppointment": {
+          "handler": "src/handlers/appointment.createAppointment",
+          "events": [
+            {
+              "http": {
+                "path": "appointments",
+                "method": "post",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "OPTIONS",
+                    "POST"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Amzn-Trace-Id"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "integration": "AWS_PROXY"
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-createAppointment",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ"
+        },
+        "getAppointmentsByInsuredId": {
+          "handler": "src/handlers/appointment.getAppointmentsByInsuredId",
+          "events": [
+            {
+              "http": {
+                "path": "appointments/{insuredId}",
+                "method": "get",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "OPTIONS",
+                    "GET"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Amzn-Trace-Id"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "integration": "AWS_PROXY"
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-getAppointmentsByInsuredId",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg"
+        },
+        "appointmentPE": {
+          "handler": "src/interfaces/events/SqsHandlers.handleAppointmentPE",
+          "events": [
+            {
+              "sqs": {
+                "arn": {
+                  "Fn::GetAtt": [
+                    "AppointmentQueuePE",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-appointmentPE",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4"
+        },
+        "appointmentCL": {
+          "handler": "src/interfaces/events/SqsHandlers.handleAppointmentCL",
+          "events": [
+            {
+              "sqs": {
+                "arn": {
+                  "Fn::GetAtt": [
+                    "AppointmentQueueCL",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-appointmentCL",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808"
+        },
+        "confirmAppointment": {
+          "handler": "src/interfaces/events/ConfirmationHandler.handle",
+          "events": [
+            {
+              "sqs": {
+                "arn": {
+                  "Fn::GetAtt": [
+                    "AppointmentConfirmationQueue",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ],
+          "name": "rimac-appointments-dev-confirmAppointment",
+          "environment": {
+            "NODE_OPTIONS": "--enable-source-maps"
+          },
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8"
+        }
+      },
+      "custom": {
+        "tableName": "Appointments",
+        "esbuild": {
+          "bundle": true,
+          "minify": false,
+          "sourcemap": true,
+          "exclude": [
+            "aws-sdk"
+          ],
+          "target": "node18",
+          "define": {
+            "require.resolve": "undefined"
+          },
+          "platform": "node",
+          "concurrency": 10
+        }
+      },
+      "resources": {
+        "Resources": {
+          "AppointmentsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "Appointments",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "insuredId",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "scheduleId",
+                  "AttributeType": "N"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "insuredId",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "scheduleId",
+                  "KeyType": "RANGE"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          },
+          "AppointmentTopicPE": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "appointment-topic-pe"
+            }
+          },
+          "AppointmentTopicCL": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "appointment-topic-cl"
+            }
+          },
+          "AppointmentQueuePE": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "appointment-queue-pe"
+            }
+          },
+          "AppointmentQueuePEPolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "AppointmentQueuePE"
+                }
+              ],
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "AppointmentQueuePE",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnEquals": {
+                        "aws:SourceArn": {
+                          "Ref": "AppointmentTopicPE"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "SNSSubscriptionPE": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+              "TopicArn": {
+                "Ref": "AppointmentTopicPE"
+              },
+              "Protocol": "sqs",
+              "Endpoint": {
+                "Fn::GetAtt": [
+                  "AppointmentQueuePE",
+                  "Arn"
+                ]
+              },
+              "FilterPolicy": {
+                "countryISO": [
+                  "PE"
+                ]
+              }
+            }
+          },
+          "AppointmentQueueCL": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "appointment-queue-cl"
+            }
+          },
+          "AppointmentQueueCLPolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "AppointmentQueueCL"
+                }
+              ],
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "AppointmentQueueCL",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnEquals": {
+                        "aws:SourceArn": {
+                          "Ref": "AppointmentTopicCL"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "SNSSubscriptionCL": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+              "TopicArn": {
+                "Ref": "AppointmentTopicCL"
+              },
+              "Protocol": "sqs",
+              "Endpoint": {
+                "Fn::GetAtt": [
+                  "AppointmentQueueCL",
+                  "Arn"
+                ]
+              },
+              "FilterPolicy": {
+                "countryISO": [
+                  "CL"
+                ]
+              }
+            }
+          },
+          "AppointmentConfirmationQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "appointment-confirmation-queue"
+            }
+          },
+          "AppointmentConfirmationQueuePolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "AppointmentConfirmationQueue"
+                }
+              ],
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "AppointmentConfirmationQueue",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnEquals": {
+                        "aws:SourceArn": "arn:aws:events:us-east-1:257505038232:rule/appointment-completed-rule"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "AppointmentCompletedRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "Name": "appointment-completed-rule",
+              "EventPattern": {
+                "source": [
+                  "appointment.service"
+                ],
+                "detail-type": [
+                  "AppointmentCompleted"
+                ]
+              },
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "AppointmentConfirmationQueue",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "SendToConfirmationQueue"
+                }
+              ]
+            }
+          }
+        },
+        "Outputs": {}
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "us-east-1",
+      "environment": {
+        "APPOINTMENTS_TABLE": "Appointments",
+        "SNS_TOPIC_PE": {
+          "Ref": "AppointmentTopicPE"
+        },
+        "SNS_TOPIC_CL": {
+          "Ref": "AppointmentTopicCL"
+        },
+        "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+        "RDS_PORT": "3306",
+        "RDS_USER": "admin",
+        "RDS_PASSWORD": "<REDACTED>",
+        "RDS_DATABASE": "mysqle_pe"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sns:Publish"
+              ],
+              "Resource": [
+                "arn:aws:sns:us-east-1:*:appointment-topic-pe",
+                "arn:aws:sns:us-east-1:*:appointment-topic-cl"
+              ]
+            }
+          ]
+        }
+      },
+      "stage": "dev",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "AppLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-app"
+            }
+          },
+          "SwaggerDocsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-swaggerDocs"
+            }
+          },
+          "CreateAppointmentLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-createAppointment"
+            }
+          },
+          "GetAppointmentsByInsuredIdLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-getAppointmentsByInsuredId"
+            }
+          },
+          "AppointmentPELogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-appointmentPE"
+            }
+          },
+          "AppointmentCLLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-appointmentCL"
+            }
+          },
+          "ConfirmAppointmentLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/rimac-appointments-dev-confirmAppointment"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "rimac-appointments",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rimac-appointments-dev*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rimac-appointments-dev*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sns:Publish"
+                        ],
+                        "Resource": [
+                          "arn:aws:sns:us-east-1:*:appointment-topic-pe",
+                          "arn:aws:sns:us-east-1:*:appointment-topic-cl"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:ReceiveMessage",
+                          "sqs:DeleteMessage",
+                          "sqs:GetQueueAttributes"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "AppointmentQueuePE",
+                              "Arn"
+                            ]
+                          },
+                          {
+                            "Fn::GetAtt": [
+                              "AppointmentQueueCL",
+                              "Arn"
+                            ]
+                          },
+                          {
+                            "Fn::GetAtt": [
+                              "AppointmentConfirmationQueue",
+                              "Arn"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "rimac-appointments",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "AppLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/server.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-app",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "AppLogGroup"
+            ]
+          },
+          "SwaggerDocsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/server.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-swaggerDocs",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "SwaggerDocsLogGroup"
+            ]
+          },
+          "CreateAppointmentLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/handlers/appointment.createAppointment",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-createAppointment",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "CreateAppointmentLogGroup"
+            ]
+          },
+          "GetAppointmentsByInsuredIdLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/handlers/appointment.getAppointmentsByInsuredId",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-getAppointmentsByInsuredId",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GetAppointmentsByInsuredIdLogGroup"
+            ]
+          },
+          "AppointmentPELambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/interfaces/events/SqsHandlers.handleAppointmentPE",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-appointmentPE",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "AppointmentPELogGroup"
+            ]
+          },
+          "AppointmentCLLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/interfaces/events/SqsHandlers.handleAppointmentCL",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-appointmentCL",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "AppointmentCLLogGroup"
+            ]
+          },
+          "ConfirmAppointmentLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+                "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+              },
+              "Handler": "src/interfaces/events/ConfirmationHandler.handle",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "rimac-appointments-dev-confirmAppointment",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "APPOINTMENTS_TABLE": "Appointments",
+                  "SNS_TOPIC_PE": {
+                    "Ref": "AppointmentTopicPE"
+                  },
+                  "SNS_TOPIC_CL": {
+                    "Ref": "AppointmentTopicCL"
+                  },
+                  "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                  "RDS_PORT": "3306",
+                  "RDS_USER": "admin",
+                  "RDS_PASSWORD": "<REDACTED>",
+                  "RDS_DATABASE": "mysqle_pe",
+                  "NODE_OPTIONS": "--enable-source-maps"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ConfirmAppointmentLogGroup"
+            ]
+          },
+          "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "AppLambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "SwaggerDocsLambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "CreateAppointmentLambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GetAppointmentsByInsuredIdLambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "AppointmentPELambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "AppointmentCLLambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ConfirmAppointmentLambdaFunction"
+              },
+              "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+            }
+          },
+          "ApiGatewayRestApi": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+              "Name": "dev-rimac-appointments",
+              "EndpointConfiguration": {
+                "Types": [
+                  "EDGE"
+                ]
+              },
+              "Policy": ""
+            }
+          },
+          "ApiGatewayResourceAppointments": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "appointments",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayResourceAppointmentsInsuredidVar": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Ref": "ApiGatewayResourceAppointments"
+              },
+              "PathPart": "{insuredId}",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayResourceDocs": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "docs",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodAppointmentsInsuredidVarOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                      "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": ""
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceAppointmentsInsuredidVar"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodAppointmentsOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                      "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": ""
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceAppointments"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodDocsOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                      "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": ""
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceDocs"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodAppointmentsPost": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "POST",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceAppointments"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": "<REDACTED>",
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "CreateAppointmentLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "CreateAppointmentLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayMethodAppointmentsInsuredidVarGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceAppointmentsInsuredidVar"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": "<REDACTED>",
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "GetAppointmentsByInsuredIdLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "GetAppointmentsByInsuredIdLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayMethodDocsGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceDocs"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": "<REDACTED>",
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "SwaggerDocsLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "SwaggerDocsLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayDeployment1754346858539": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "StageName": "dev"
+            },
+            "DependsOn": [
+              "ApiGatewayMethodAppointmentsInsuredidVarOptions",
+              "ApiGatewayMethodAppointmentsOptions",
+              "ApiGatewayMethodDocsOptions",
+              "ApiGatewayMethodAppointmentsPost",
+              "ApiGatewayMethodAppointmentsInsuredidVarGet",
+              "ApiGatewayMethodDocsGet",
+              "ApiGatewayMethodAppointmentsPost",
+              "ApiGatewayMethodDocsGet",
+              "ApiGatewayMethodAppointmentsPost",
+              "ApiGatewayMethodAppointmentsInsuredidVarGet"
+            ]
+          },
+          "AppLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "AppLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "SwaggerDocsLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "SwaggerDocsLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "CreateAppointmentLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "CreateAppointmentLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "GetAppointmentsByInsuredIdLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "GetAppointmentsByInsuredIdLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "AppointmentPEEventSourceMappingSQSAppointmentQueuePE": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+              "IamRoleLambdaExecution"
+            ],
+            "Properties": {
+              "BatchSize": 10,
+              "EventSourceArn": {
+                "Fn::GetAtt": [
+                  "AppointmentQueuePE",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "AppointmentPELambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Enabled": true
+            }
+          },
+          "AppointmentCLEventSourceMappingSQSAppointmentQueueCL": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+              "IamRoleLambdaExecution"
+            ],
+            "Properties": {
+              "BatchSize": 10,
+              "EventSourceArn": {
+                "Fn::GetAtt": [
+                  "AppointmentQueueCL",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "AppointmentCLLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Enabled": true
+            }
+          },
+          "ConfirmAppointmentEventSourceMappingSQSAppointmentConfirmationQueue": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+              "IamRoleLambdaExecution"
+            ],
+            "Properties": {
+              "BatchSize": 10,
+              "EventSourceArn": {
+                "Fn::GetAtt": [
+                  "AppointmentConfirmationQueue",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ConfirmAppointmentLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Enabled": true
+            }
+          },
+          "AppointmentsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "Appointments",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "insuredId",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "scheduleId",
+                  "AttributeType": "N"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "insuredId",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "scheduleId",
+                  "KeyType": "RANGE"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          },
+          "AppointmentTopicPE": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "appointment-topic-pe"
+            }
+          },
+          "AppointmentTopicCL": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "appointment-topic-cl"
+            }
+          },
+          "AppointmentQueuePE": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "appointment-queue-pe"
+            }
+          },
+          "AppointmentQueuePEPolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "AppointmentQueuePE"
+                }
+              ],
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "AppointmentQueuePE",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnEquals": {
+                        "aws:SourceArn": {
+                          "Ref": "AppointmentTopicPE"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "SNSSubscriptionPE": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+              "TopicArn": {
+                "Ref": "AppointmentTopicPE"
+              },
+              "Protocol": "sqs",
+              "Endpoint": {
+                "Fn::GetAtt": [
+                  "AppointmentQueuePE",
+                  "Arn"
+                ]
+              },
+              "FilterPolicy": {
+                "countryISO": [
+                  "PE"
+                ]
+              }
+            }
+          },
+          "AppointmentQueueCL": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "appointment-queue-cl"
+            }
+          },
+          "AppointmentQueueCLPolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "AppointmentQueueCL"
+                }
+              ],
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "AppointmentQueueCL",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnEquals": {
+                        "aws:SourceArn": {
+                          "Ref": "AppointmentTopicCL"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "SNSSubscriptionCL": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+              "TopicArn": {
+                "Ref": "AppointmentTopicCL"
+              },
+              "Protocol": "sqs",
+              "Endpoint": {
+                "Fn::GetAtt": [
+                  "AppointmentQueueCL",
+                  "Arn"
+                ]
+              },
+              "FilterPolicy": {
+                "countryISO": [
+                  "CL"
+                ]
+              }
+            }
+          },
+          "AppointmentConfirmationQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "appointment-confirmation-queue"
+            }
+          },
+          "AppointmentConfirmationQueuePolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "AppointmentConfirmationQueue"
+                }
+              ],
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "AppointmentConfirmationQueue",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnEquals": {
+                        "aws:SourceArn": "arn:aws:events:us-east-1:257505038232:rule/appointment-completed-rule"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "AppointmentCompletedRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "Name": "appointment-completed-rule",
+              "EventPattern": {
+                "source": [
+                  "appointment.service"
+                ],
+                "detail-type": [
+                  "AppointmentCompleted"
+                ]
+              },
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "AppointmentConfirmationQueue",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "SendToConfirmationQueue"
+                }
+              ]
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "AppLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-AppLambdaFunctionQualifiedArn"
+            }
+          },
+          "SwaggerDocsLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-SwaggerDocsLambdaFunctionQualifiedArn"
+            }
+          },
+          "CreateAppointmentLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-CreateAppointmentLambdaFunctionQualifiedArn"
+            }
+          },
+          "GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn"
+            }
+          },
+          "AppointmentPELambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-AppointmentPELambdaFunctionQualifiedArn"
+            }
+          },
+          "AppointmentCLLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-AppointmentCLLambdaFunctionQualifiedArn"
+            }
+          },
+          "ConfirmAppointmentLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8"
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-ConfirmAppointmentLambdaFunctionQualifiedArn"
+            }
+          },
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  ".execute-api.",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/dev"
+                ]
+              ]
+            },
+            "Export": {
+              "Name": "sls-rimac-appointments-dev-ServiceEndpoint"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "serviceRawFile": "service: rimac-appointments\r\n\r\n\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs18.x\r\n  region: us-east-1\r\n  environment:\r\n    APPOINTMENTS_TABLE: ${self:custom.tableName}\r\n    SNS_TOPIC_PE: !Ref AppointmentTopicPE\r\n    SNS_TOPIC_CL: !Ref AppointmentTopicCL\r\n    RDS_HOST: mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com\r\n    RDS_PORT: 3306\r\n    RDS_USER: admin \r\n    RDS_PASSWORD: Danivicr093\r\n    RDS_DATABASE: mysqle_pe\r\n  iam:\r\n    role:\r\n      statements:\r\n        - Effect: Allow\r\n          Action:\r\n            - sns:Publish\r\n          Resource:\r\n            - arn:aws:sns:us-east-1:*:appointment-topic-pe\r\n            - arn:aws:sns:us-east-1:*:appointment-topic-cl\r\n   \r\nfunctions:\r\n  app:\r\n    handler: src/server.handler\r\n    events:\r\n      - http:\r\n          path: appointments\r\n          method: post\r\n      - http:\r\n          path: appointments/{insuredId}\r\n          method: get\r\n          cors: true\r\n      - http:\r\n          path: docs\r\n          method: get\r\n      - http:\r\n          path: appointments\r\n          method: post\r\n          cors: true\r\n  swaggerDocs:\r\n    handler: src/server.handler\r\n    events:\r\n      - http:\r\n          path: docs\r\n          method: get\r\n          cors: true\r\n  createAppointment:\r\n    handler: src/handlers/appointment.createAppointment\r\n    events:\r\n      - http:\r\n          path: appointments\r\n          method: post\r\n          cors: true\r\n\r\n  getAppointmentsByInsuredId:\r\n    handler: src/handlers/appointment.getAppointmentsByInsuredId\r\n    events:\r\n      - http:\r\n          path: appointments/{insuredId}\r\n          method: get\r\n          cors: true\r\n\r\n  appointmentPE:\r\n    handler: src/interfaces/events/SqsHandlers.handleAppointmentPE\r\n    events:\r\n      - sqs:\r\n          arn: !GetAtt AppointmentQueuePE.Arn\r\n\r\n  appointmentCL:\r\n    handler: src/interfaces/events/SqsHandlers.handleAppointmentCL\r\n    events:\r\n      - sqs:\r\n          arn: !GetAtt AppointmentQueueCL.Arn\r\n\r\n  confirmAppointment:\r\n    handler: src/interfaces/events/ConfirmationHandler.handle\r\n    events:\r\n      - sqs:\r\n         arn: !GetAtt AppointmentConfirmationQueue.Arn\r\n\r\ncustom:\r\n  tableName: Appointments\r\n  esbuild:\r\n    bundle: true\r\n    minify: false\r\n    sourcemap: true\r\n    exclude: ['aws-sdk']\r\n    target: node18\r\n    define:\r\n      'require.resolve': undefined\r\n    platform: node\r\n    concurrency: 10\r\n\r\n\r\n\r\nresources:\r\n  Resources:\r\n\r\n    #######################\r\n    ## DynamoDB Table\r\n    #######################\r\n    AppointmentsTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName:  ${self:custom.tableName}\r\n        AttributeDefinitions:\r\n          - AttributeName: insuredId\r\n            AttributeType: S\r\n          - AttributeName: scheduleId\r\n            AttributeType: N\r\n        KeySchema:\r\n          - AttributeName: insuredId\r\n            KeyType: HASH\r\n          - AttributeName: scheduleId\r\n            KeyType: RANGE\r\n        BillingMode: PAY_PER_REQUEST\r\n\r\n    #######################\r\n    ## SNS Topics\r\n    #######################\r\n    AppointmentTopicPE:\r\n      Type: AWS::SNS::Topic\r\n      Properties:\r\n        TopicName: appointment-topic-pe\r\n\r\n    AppointmentTopicCL:\r\n      Type: AWS::SNS::Topic\r\n      Properties:\r\n        TopicName: appointment-topic-cl\r\n\r\n    #######################\r\n    ## SQS for PE\r\n    #######################\r\n    AppointmentQueuePE:\r\n      Type: AWS::SQS::Queue\r\n      Properties:\r\n        QueueName: appointment-queue-pe\r\n\r\n    AppointmentQueuePEPolicy:\r\n      Type: AWS::SQS::QueuePolicy\r\n      Properties:\r\n        Queues:\r\n          - !Ref AppointmentQueuePE\r\n        PolicyDocument:\r\n          Version: '2012-10-17'\r\n          Statement:\r\n            - Effect: Allow\r\n              Principal: '*'\r\n              Action: 'SQS:SendMessage'\r\n              Resource: !GetAtt AppointmentQueuePE.Arn\r\n              Condition:\r\n                ArnEquals:\r\n                  aws:SourceArn: !Ref AppointmentTopicPE\r\n\r\n    SNSSubscriptionPE:\r\n      Type: AWS::SNS::Subscription\r\n      Properties:\r\n        TopicArn: !Ref AppointmentTopicPE\r\n        Protocol: sqs\r\n        Endpoint: !GetAtt AppointmentQueuePE.Arn\r\n        FilterPolicy:\r\n          countryISO:\r\n            - PE\r\n\r\n    #######################\r\n    ## SQS for CL\r\n    #######################\r\n    AppointmentQueueCL:\r\n      Type: AWS::SQS::Queue\r\n      Properties:\r\n        QueueName: appointment-queue-cl\r\n\r\n    AppointmentQueueCLPolicy:\r\n      Type: AWS::SQS::QueuePolicy\r\n      Properties:\r\n        Queues:\r\n          - !Ref AppointmentQueueCL\r\n        PolicyDocument:\r\n          Version: '2012-10-17'\r\n          Statement:\r\n            - Effect: Allow\r\n              Principal: '*'\r\n              Action: 'SQS:SendMessage'\r\n              Resource: !GetAtt AppointmentQueueCL.Arn\r\n              Condition:\r\n                ArnEquals:\r\n                  aws:SourceArn: !Ref AppointmentTopicCL\r\n\r\n    SNSSubscriptionCL:\r\n      Type: AWS::SNS::Subscription\r\n      Properties:\r\n        TopicArn: !Ref AppointmentTopicCL\r\n        Protocol: sqs\r\n        Endpoint: !GetAtt AppointmentQueueCL.Arn\r\n        FilterPolicy:\r\n          countryISO:\r\n            - CL\r\n\r\n    #######################\r\n    ## EventBridge → SQS\r\n    #######################\r\n    AppointmentConfirmationQueue:\r\n      Type: AWS::SQS::Queue\r\n      Properties:\r\n        QueueName: appointment-confirmation-queue\r\n\r\n    AppointmentConfirmationQueuePolicy:\r\n      Type: AWS::SQS::QueuePolicy\r\n      Properties:\r\n        Queues:\r\n          - !Ref AppointmentConfirmationQueue\r\n        PolicyDocument:\r\n          Version: '2012-10-17'\r\n          Statement:\r\n            - Effect: Allow\r\n              Principal: '*'\r\n              Action: 'SQS:SendMessage'\r\n              Resource: !GetAtt AppointmentConfirmationQueue.Arn\r\n              Condition:\r\n                ArnEquals:\r\n                  aws:SourceArn: arn:aws:events:${self:provider.region}:${aws:accountId}:rule/appointment-completed-rule\r\n\r\n    AppointmentCompletedRule:\r\n      Type: AWS::Events::Rule\r\n      Properties:\r\n        Name: appointment-completed-rule\r\n        EventPattern:\r\n          source:\r\n            - \"appointment.service\"\r\n          detail-type:\r\n            - \"AppointmentCompleted\"\r\n        Targets:\r\n          - Arn: !GetAtt AppointmentConfirmationQueue.Arn\r\n            Id: \"SendToConfirmationQueue\"\r\n",
+    "command": [
+      "deploy"
+    ],
+    "options": {},
+    "orgId": "5ef3529e-0ea6-4352-ba15-2331db69943a",
+    "orgName": "devdanivc",
+    "userId": "DypyfdVXKB21bd7jHc",
+    "userName": "devdanivc",
+    "serviceProviderAwsAccountId": "257505038232",
+    "serviceProviderAwsCfStackName": "rimac-appointments-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:257505038232:stack/rimac-appointments-dev/3f19d410-6f66-11f0-86ed-12471c98c337",
+    "serviceProviderAwsCfStackCreated": "2025-08-02T06:02:18.577Z",
+    "serviceProviderAwsCfStackUpdated": "2025-08-04T22:20:11.864Z",
+    "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "CreateAppointmentLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-createAppointment:48",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-CreateAppointmentLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ConfirmAppointmentLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-confirmAppointment:48",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-ConfirmAppointmentLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "AppointmentCLLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-appointmentCL:48",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-AppointmentCLLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "AppointmentPELambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-appointmentPE:48",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-AppointmentPELambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "SwaggerDocsLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-swaggerDocs:12",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-SwaggerDocsLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-getAppointmentsByInsuredId:48",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "AppLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:257505038232:function:rimac-appointments-dev-app:7",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-rimac-appointments-dev-AppLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServiceEndpoint",
+        "OutputValue": "https://cbhsv6dgwf.execute-api.us-east-1.amazonaws.com/dev",
+        "Description": "URL of the service endpoint",
+        "ExportName": "sls-rimac-appointments-dev-ServiceEndpoint"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+        "ExportName": "sls-rimac-appointments-dev-ServerlessDeploymentBucketName"
+      }
+    ],
+    "compiledCloudFormationTemplate": {
+      "AWSTemplateFormatVersion": "2010-09-09",
+      "Description": "The AWS CloudFormation template for this Serverless application",
+      "Resources": {
+        "AppLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-app"
+          }
+        },
+        "SwaggerDocsLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-swaggerDocs"
+          }
+        },
+        "CreateAppointmentLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-createAppointment"
+          }
+        },
+        "GetAppointmentsByInsuredIdLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-getAppointmentsByInsuredId"
+          }
+        },
+        "AppointmentPELogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-appointmentPE"
+          }
+        },
+        "AppointmentCLLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-appointmentCL"
+          }
+        },
+        "ConfirmAppointmentLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/rimac-appointments-dev-confirmAppointment"
+          }
+        },
+        "IamRoleLambdaExecution": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "lambda.amazonaws.com"
+                    ]
+                  },
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "rimac-appointments",
+                      "dev",
+                      "lambda"
+                    ]
+                  ]
+                },
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:CreateLogStream",
+                        "logs:CreateLogGroup",
+                        "logs:TagResource"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rimac-appointments-dev*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:PutLogEvents"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/rimac-appointments-dev*:*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sns:Publish"
+                      ],
+                      "Resource": [
+                        "arn:aws:sns:us-east-1:*:appointment-topic-pe",
+                        "arn:aws:sns:us-east-1:*:appointment-topic-cl"
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:ReceiveMessage",
+                        "sqs:DeleteMessage",
+                        "sqs:GetQueueAttributes"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "AppointmentQueuePE",
+                            "Arn"
+                          ]
+                        },
+                        {
+                          "Fn::GetAtt": [
+                            "AppointmentQueueCL",
+                            "Arn"
+                          ]
+                        },
+                        {
+                          "Fn::GetAtt": [
+                            "AppointmentConfirmationQueue",
+                            "Arn"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "Path": "/",
+            "RoleName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "rimac-appointments",
+                  "dev",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "lambdaRole"
+                ]
+              ]
+            }
+          }
+        },
+        "AppLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/server.handler",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-app",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "AppLogGroup"
+          ]
+        },
+        "SwaggerDocsLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/server.handler",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-swaggerDocs",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "SwaggerDocsLogGroup"
+          ]
+        },
+        "CreateAppointmentLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/handlers/appointment.createAppointment",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-createAppointment",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "CreateAppointmentLogGroup"
+          ]
+        },
+        "GetAppointmentsByInsuredIdLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/handlers/appointment.getAppointmentsByInsuredId",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-getAppointmentsByInsuredId",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "GetAppointmentsByInsuredIdLogGroup"
+          ]
+        },
+        "AppointmentPELambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/interfaces/events/SqsHandlers.handleAppointmentPE",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-appointmentPE",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "AppointmentPELogGroup"
+          ]
+        },
+        "AppointmentCLLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/interfaces/events/SqsHandlers.handleAppointmentCL",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-appointmentCL",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "AppointmentCLLogGroup"
+          ]
+        },
+        "ConfirmAppointmentLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+              "S3Key": "serverless/rimac-appointments/dev/1754346868504-2025-08-04T22:34:28.504Z/rimac-appointments.zip"
+            },
+            "Handler": "src/interfaces/events/ConfirmationHandler.handle",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "rimac-appointments-dev-confirmAppointment",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "APPOINTMENTS_TABLE": "Appointments",
+                "SNS_TOPIC_PE": {
+                  "Ref": "AppointmentTopicPE"
+                },
+                "SNS_TOPIC_CL": {
+                  "Ref": "AppointmentTopicCL"
+                },
+                "RDS_HOST": "mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com",
+                "RDS_PORT": "3306",
+                "RDS_USER": "admin",
+                "RDS_PASSWORD": "<REDACTED>",
+                "RDS_DATABASE": "mysqle_pe",
+                "NODE_OPTIONS": "--enable-source-maps"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "ConfirmAppointmentLogGroup"
+          ]
+        },
+        "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "AppLambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "SwaggerDocsLambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CreateAppointmentLambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "GetAppointmentsByInsuredIdLambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "AppointmentPELambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "AppointmentCLLambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "ConfirmAppointmentLambdaFunction"
+            },
+            "CodeSha256": "LSFmsmVqHBAWAATA/eipMLCLvD4fjD6UqzH1SsDErhU="
+          }
+        },
+        "ApiGatewayRestApi": {
+          "Type": "AWS::ApiGateway::RestApi",
+          "Properties": {
+            "Name": "dev-rimac-appointments",
+            "EndpointConfiguration": {
+              "Types": [
+                "EDGE"
+              ]
+            },
+            "Policy": ""
+          }
+        },
+        "ApiGatewayResourceAppointments": {
+          "Type": "AWS::ApiGateway::Resource",
+          "Properties": {
+            "ParentId": {
+              "Fn::GetAtt": [
+                "ApiGatewayRestApi",
+                "RootResourceId"
+              ]
+            },
+            "PathPart": "appointments",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayResourceAppointmentsInsuredidVar": {
+          "Type": "AWS::ApiGateway::Resource",
+          "Properties": {
+            "ParentId": {
+              "Ref": "ApiGatewayResourceAppointments"
+            },
+            "PathPart": "{insuredId}",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayResourceDocs": {
+          "Type": "AWS::ApiGateway::Resource",
+          "Properties": {
+            "ParentId": {
+              "Fn::GetAtt": [
+                "ApiGatewayRestApi",
+                "RootResourceId"
+              ]
+            },
+            "PathPart": "docs",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodAppointmentsInsuredidVarOptions": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "AuthorizationType": "NONE",
+            "HttpMethod": "OPTIONS",
+            "MethodResponses": [
+              {
+                "StatusCode": "200",
+                "ResponseParameters": {
+                  "method.response.header.Access-Control-Allow-Origin": true,
+                  "method.response.header.Access-Control-Allow-Headers": true,
+                  "method.response.header.Access-Control-Allow-Methods": true
+                },
+                "ResponseModels": {}
+              }
+            ],
+            "RequestParameters": {},
+            "Integration": {
+              "Type": "MOCK",
+              "RequestTemplates": {
+                "application/json": "{statusCode:200}"
+              },
+              "ContentHandling": "CONVERT_TO_TEXT",
+              "IntegrationResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": "'*'",
+                    "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                    "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                  },
+                  "ResponseTemplates": {
+                    "application/json": ""
+                  }
+                }
+              ]
+            },
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceAppointmentsInsuredidVar"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodAppointmentsOptions": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "AuthorizationType": "NONE",
+            "HttpMethod": "OPTIONS",
+            "MethodResponses": [
+              {
+                "StatusCode": "200",
+                "ResponseParameters": {
+                  "method.response.header.Access-Control-Allow-Origin": true,
+                  "method.response.header.Access-Control-Allow-Headers": true,
+                  "method.response.header.Access-Control-Allow-Methods": true
+                },
+                "ResponseModels": {}
+              }
+            ],
+            "RequestParameters": {},
+            "Integration": {
+              "Type": "MOCK",
+              "RequestTemplates": {
+                "application/json": "{statusCode:200}"
+              },
+              "ContentHandling": "CONVERT_TO_TEXT",
+              "IntegrationResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": "'*'",
+                    "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                    "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+                  },
+                  "ResponseTemplates": {
+                    "application/json": ""
+                  }
+                }
+              ]
+            },
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceAppointments"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodDocsOptions": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "AuthorizationType": "NONE",
+            "HttpMethod": "OPTIONS",
+            "MethodResponses": [
+              {
+                "StatusCode": "200",
+                "ResponseParameters": {
+                  "method.response.header.Access-Control-Allow-Origin": true,
+                  "method.response.header.Access-Control-Allow-Headers": true,
+                  "method.response.header.Access-Control-Allow-Methods": true
+                },
+                "ResponseModels": {}
+              }
+            ],
+            "RequestParameters": {},
+            "Integration": {
+              "Type": "MOCK",
+              "RequestTemplates": {
+                "application/json": "{statusCode:200}"
+              },
+              "ContentHandling": "CONVERT_TO_TEXT",
+              "IntegrationResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": "'*'",
+                    "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                    "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                  },
+                  "ResponseTemplates": {
+                    "application/json": ""
+                  }
+                }
+              ]
+            },
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceDocs"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodAppointmentsPost": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "HttpMethod": "POST",
+            "RequestParameters": {},
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceAppointments"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ApiKeyRequired": "<REDACTED>",
+            "AuthorizationType": "NONE",
+            "Integration": {
+              "IntegrationHttpMethod": "POST",
+              "Type": "AWS_PROXY",
+              "Uri": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":apigateway:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":lambda:path/2015-03-31/functions/",
+                    {
+                      "Fn::GetAtt": [
+                        "CreateAppointmentLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "/invocations"
+                  ]
+                ]
+              }
+            },
+            "MethodResponses": []
+          },
+          "DependsOn": [
+            "CreateAppointmentLambdaPermissionApiGateway"
+          ]
+        },
+        "ApiGatewayMethodAppointmentsInsuredidVarGet": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "HttpMethod": "GET",
+            "RequestParameters": {},
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceAppointmentsInsuredidVar"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ApiKeyRequired": "<REDACTED>",
+            "AuthorizationType": "NONE",
+            "Integration": {
+              "IntegrationHttpMethod": "POST",
+              "Type": "AWS_PROXY",
+              "Uri": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":apigateway:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":lambda:path/2015-03-31/functions/",
+                    {
+                      "Fn::GetAtt": [
+                        "GetAppointmentsByInsuredIdLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "/invocations"
+                  ]
+                ]
+              }
+            },
+            "MethodResponses": []
+          },
+          "DependsOn": [
+            "GetAppointmentsByInsuredIdLambdaPermissionApiGateway"
+          ]
+        },
+        "ApiGatewayMethodDocsGet": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "HttpMethod": "GET",
+            "RequestParameters": {},
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceDocs"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ApiKeyRequired": "<REDACTED>",
+            "AuthorizationType": "NONE",
+            "Integration": {
+              "IntegrationHttpMethod": "POST",
+              "Type": "AWS_PROXY",
+              "Uri": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":apigateway:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":lambda:path/2015-03-31/functions/",
+                    {
+                      "Fn::GetAtt": [
+                        "SwaggerDocsLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "/invocations"
+                  ]
+                ]
+              }
+            },
+            "MethodResponses": []
+          },
+          "DependsOn": [
+            "SwaggerDocsLambdaPermissionApiGateway"
+          ]
+        },
+        "ApiGatewayDeployment1754346858539": {
+          "Type": "AWS::ApiGateway::Deployment",
+          "Properties": {
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "StageName": "dev"
+          },
+          "DependsOn": [
+            "ApiGatewayMethodAppointmentsInsuredidVarOptions",
+            "ApiGatewayMethodAppointmentsOptions",
+            "ApiGatewayMethodDocsOptions",
+            "ApiGatewayMethodAppointmentsPost",
+            "ApiGatewayMethodAppointmentsInsuredidVarGet",
+            "ApiGatewayMethodDocsGet",
+            "ApiGatewayMethodAppointmentsPost",
+            "ApiGatewayMethodDocsGet",
+            "ApiGatewayMethodAppointmentsPost",
+            "ApiGatewayMethodAppointmentsInsuredidVarGet"
+          ]
+        },
+        "AppLambdaPermissionApiGateway": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "AppLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "/*/*"
+                ]
+              ]
+            }
+          }
+        },
+        "SwaggerDocsLambdaPermissionApiGateway": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "SwaggerDocsLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "/*/*"
+                ]
+              ]
+            }
+          }
+        },
+        "CreateAppointmentLambdaPermissionApiGateway": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "CreateAppointmentLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "/*/*"
+                ]
+              ]
+            }
+          }
+        },
+        "GetAppointmentsByInsuredIdLambdaPermissionApiGateway": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "GetAppointmentsByInsuredIdLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "/*/*"
+                ]
+              ]
+            }
+          }
+        },
+        "AppointmentPEEventSourceMappingSQSAppointmentQueuePE": {
+          "Type": "AWS::Lambda::EventSourceMapping",
+          "DependsOn": [
+            "IamRoleLambdaExecution"
+          ],
+          "Properties": {
+            "BatchSize": 10,
+            "EventSourceArn": {
+              "Fn::GetAtt": [
+                "AppointmentQueuePE",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "AppointmentPELambdaFunction",
+                "Arn"
+              ]
+            },
+            "Enabled": true
+          }
+        },
+        "AppointmentCLEventSourceMappingSQSAppointmentQueueCL": {
+          "Type": "AWS::Lambda::EventSourceMapping",
+          "DependsOn": [
+            "IamRoleLambdaExecution"
+          ],
+          "Properties": {
+            "BatchSize": 10,
+            "EventSourceArn": {
+              "Fn::GetAtt": [
+                "AppointmentQueueCL",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "AppointmentCLLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Enabled": true
+          }
+        },
+        "ConfirmAppointmentEventSourceMappingSQSAppointmentConfirmationQueue": {
+          "Type": "AWS::Lambda::EventSourceMapping",
+          "DependsOn": [
+            "IamRoleLambdaExecution"
+          ],
+          "Properties": {
+            "BatchSize": 10,
+            "EventSourceArn": {
+              "Fn::GetAtt": [
+                "AppointmentConfirmationQueue",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "ConfirmAppointmentLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Enabled": true
+          }
+        },
+        "AppointmentsTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+            "TableName": "Appointments",
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "insuredId",
+                "AttributeType": "S"
+              },
+              {
+                "AttributeName": "scheduleId",
+                "AttributeType": "N"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "insuredId",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "scheduleId",
+                "KeyType": "RANGE"
+              }
+            ],
+            "BillingMode": "PAY_PER_REQUEST"
+          }
+        },
+        "AppointmentTopicPE": {
+          "Type": "AWS::SNS::Topic",
+          "Properties": {
+            "TopicName": "appointment-topic-pe"
+          }
+        },
+        "AppointmentTopicCL": {
+          "Type": "AWS::SNS::Topic",
+          "Properties": {
+            "TopicName": "appointment-topic-cl"
+          }
+        },
+        "AppointmentQueuePE": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "appointment-queue-pe"
+          }
+        },
+        "AppointmentQueuePEPolicy": {
+          "Type": "AWS::SQS::QueuePolicy",
+          "Properties": {
+            "Queues": [
+              {
+                "Ref": "AppointmentQueuePE"
+              }
+            ],
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "SQS:SendMessage",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "AppointmentQueuePE",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "ArnEquals": {
+                      "aws:SourceArn": {
+                        "Ref": "AppointmentTopicPE"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "SNSSubscriptionPE": {
+          "Type": "AWS::SNS::Subscription",
+          "Properties": {
+            "TopicArn": {
+              "Ref": "AppointmentTopicPE"
+            },
+            "Protocol": "sqs",
+            "Endpoint": {
+              "Fn::GetAtt": [
+                "AppointmentQueuePE",
+                "Arn"
+              ]
+            },
+            "FilterPolicy": {
+              "countryISO": [
+                "PE"
+              ]
+            }
+          }
+        },
+        "AppointmentQueueCL": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "appointment-queue-cl"
+          }
+        },
+        "AppointmentQueueCLPolicy": {
+          "Type": "AWS::SQS::QueuePolicy",
+          "Properties": {
+            "Queues": [
+              {
+                "Ref": "AppointmentQueueCL"
+              }
+            ],
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "SQS:SendMessage",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "AppointmentQueueCL",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "ArnEquals": {
+                      "aws:SourceArn": {
+                        "Ref": "AppointmentTopicCL"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "SNSSubscriptionCL": {
+          "Type": "AWS::SNS::Subscription",
+          "Properties": {
+            "TopicArn": {
+              "Ref": "AppointmentTopicCL"
+            },
+            "Protocol": "sqs",
+            "Endpoint": {
+              "Fn::GetAtt": [
+                "AppointmentQueueCL",
+                "Arn"
+              ]
+            },
+            "FilterPolicy": {
+              "countryISO": [
+                "CL"
+              ]
+            }
+          }
+        },
+        "AppointmentConfirmationQueue": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "appointment-confirmation-queue"
+          }
+        },
+        "AppointmentConfirmationQueuePolicy": {
+          "Type": "AWS::SQS::QueuePolicy",
+          "Properties": {
+            "Queues": [
+              {
+                "Ref": "AppointmentConfirmationQueue"
+              }
+            ],
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "SQS:SendMessage",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "AppointmentConfirmationQueue",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "ArnEquals": {
+                      "aws:SourceArn": "arn:aws:events:us-east-1:257505038232:rule/appointment-completed-rule"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "AppointmentCompletedRule": {
+          "Type": "AWS::Events::Rule",
+          "Properties": {
+            "Name": "appointment-completed-rule",
+            "EventPattern": {
+              "source": [
+                "appointment.service"
+              ],
+              "detail-type": [
+                "AppointmentCompleted"
+              ]
+            },
+            "Targets": [
+              {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "AppointmentConfirmationQueue",
+                    "Arn"
+                  ]
+                },
+                "Id": "SendToConfirmationQueue"
+              }
+            ]
+          }
+        }
+      },
+      "Outputs": {
+        "ServerlessDeploymentBucketName": {
+          "Value": "serverless-framework-deployments-us-east-1-1b97e2bd-fcd0",
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-ServerlessDeploymentBucketName"
+          }
+        },
+        "AppLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "AppLambdaVersion5LbKCNNefSvt6FWavJBhz07OWkWIlzCd2eXjpSM6I"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-AppLambdaFunctionQualifiedArn"
+          }
+        },
+        "SwaggerDocsLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "SwaggerDocsLambdaVersionjcJypaPzCOC46Kr6GhIE9XLTj330zXLLkHMzFbPru8"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-SwaggerDocsLambdaFunctionQualifiedArn"
+          }
+        },
+        "CreateAppointmentLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "CreateAppointmentLambdaVersionx9HnRu87cN8fb4wTiGe143I1RVtvKA74FCWPOYXRDQ"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-CreateAppointmentLambdaFunctionQualifiedArn"
+          }
+        },
+        "GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "GetAppointmentsByInsuredIdLambdaVersionT07oiteaPD1i9Iko9jB3soyVv0TnQd4iwmgkarEg"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-GetAppointmentsByInsuredIdLambdaFunctionQualifiedArn"
+          }
+        },
+        "AppointmentPELambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "AppointmentPELambdaVersionEFfuxqvY7nKKVOWJVGiVfxddPCfwqvNh69JiDTh4"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-AppointmentPELambdaFunctionQualifiedArn"
+          }
+        },
+        "AppointmentCLLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "AppointmentCLLambdaVersion3tXW465UHs7wV9g8SRkQnUpCIh6iD9t7rEEp7j1J808"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-AppointmentCLLambdaFunctionQualifiedArn"
+          }
+        },
+        "ConfirmAppointmentLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "ConfirmAppointmentLambdaVersionjBqCAFKjvFbVc5Yjp8dcyLnXStFisPH5UDCWdkCbf8"
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-ConfirmAppointmentLambdaFunctionQualifiedArn"
+          }
+        },
+        "ServiceEndpoint": {
+          "Description": "URL of the service endpoint",
+          "Value": {
+            "Fn::Join": [
+              "",
+              [
+                "https://",
+                {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                ".execute-api.",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ".",
+                {
+                  "Ref": "AWS::URLSuffix"
+                },
+                "/dev"
+              ]
+            ]
+          },
+          "Export": {
+            "Name": "sls-rimac-appointments-dev-ServiceEndpoint"
+          }
+        }
+      }
+    }
+  }
+}

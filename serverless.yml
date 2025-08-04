@@ -1,0 +1,240 @@
+service: rimac-appointments
+
+
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    APPOINTMENTS_TABLE: ${self:custom.tableName}
+    SNS_TOPIC_PE: !Ref AppointmentTopicPE
+    SNS_TOPIC_CL: !Ref AppointmentTopicCL
+    RDS_HOST: mysql-pe.ceha8qs8kmt9.us-east-1.rds.amazonaws.com
+    RDS_PORT: 3306
+    RDS_USER: admin 
+    RDS_PASSWORD: Danivicr093
+    RDS_DATABASE: mysqle_pe
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sns:Publish
+          Resource:
+            - arn:aws:sns:us-east-1:*:appointment-topic-pe
+            - arn:aws:sns:us-east-1:*:appointment-topic-cl
+   
+functions:
+  app:
+    handler: src/server.handler
+    events:
+      - http:
+          path: appointments
+          method: post
+      - http:
+          path: appointments/{insuredId}
+          method: get
+          cors: true
+      - http:
+          path: docs
+          method: get
+      - http:
+          path: appointments
+          method: post
+          cors: true
+  swaggerDocs:
+    handler: src/server.handler
+    events:
+      - http:
+          path: docs
+          method: get
+          cors: true
+  createAppointment:
+    handler: src/handlers/appointment.createAppointment
+    events:
+      - http:
+          path: appointments
+          method: post
+          cors: true
+
+  getAppointmentsByInsuredId:
+    handler: src/handlers/appointment.getAppointmentsByInsuredId
+    events:
+      - http:
+          path: appointments/{insuredId}
+          method: get
+          cors: true
+
+  appointmentPE:
+    handler: src/interfaces/events/SqsHandlers.handleAppointmentPE
+    events:
+      - sqs:
+          arn: !GetAtt AppointmentQueuePE.Arn
+
+  appointmentCL:
+    handler: src/interfaces/events/SqsHandlers.handleAppointmentCL
+    events:
+      - sqs:
+          arn: !GetAtt AppointmentQueueCL.Arn
+
+  confirmAppointment:
+    handler: src/interfaces/events/ConfirmationHandler.handle
+    events:
+      - sqs:
+         arn: !GetAtt AppointmentConfirmationQueue.Arn
+
+custom:
+  tableName: Appointments
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: ['aws-sdk']
+    target: node18
+    define:
+      'require.resolve': undefined
+    platform: node
+    concurrency: 10
+
+
+
+resources:
+  Resources:
+
+    #######################
+    ## DynamoDB Table
+    #######################
+    AppointmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName:  ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: insuredId
+            AttributeType: S
+          - AttributeName: scheduleId
+            AttributeType: N
+        KeySchema:
+          - AttributeName: insuredId
+            KeyType: HASH
+          - AttributeName: scheduleId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+
+    #######################
+    ## SNS Topics
+    #######################
+    AppointmentTopicPE:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: appointment-topic-pe
+
+    AppointmentTopicCL:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: appointment-topic-cl
+
+    #######################
+    ## SQS for PE
+    #######################
+    AppointmentQueuePE:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: appointment-queue-pe
+
+    AppointmentQueuePEPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref AppointmentQueuePE
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: 'SQS:SendMessage'
+              Resource: !GetAtt AppointmentQueuePE.Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref AppointmentTopicPE
+
+    SNSSubscriptionPE:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref AppointmentTopicPE
+        Protocol: sqs
+        Endpoint: !GetAtt AppointmentQueuePE.Arn
+        FilterPolicy:
+          countryISO:
+            - PE
+
+    #######################
+    ## SQS for CL
+    #######################
+    AppointmentQueueCL:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: appointment-queue-cl
+
+    AppointmentQueueCLPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref AppointmentQueueCL
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: 'SQS:SendMessage'
+              Resource: !GetAtt AppointmentQueueCL.Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref AppointmentTopicCL
+
+    SNSSubscriptionCL:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref AppointmentTopicCL
+        Protocol: sqs
+        Endpoint: !GetAtt AppointmentQueueCL.Arn
+        FilterPolicy:
+          countryISO:
+            - CL
+
+    #######################
+    ## EventBridge → SQS
+    #######################
+    AppointmentConfirmationQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: appointment-confirmation-queue
+
+    AppointmentConfirmationQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref AppointmentConfirmationQueue
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: 'SQS:SendMessage'
+              Resource: !GetAtt AppointmentConfirmationQueue.Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: arn:aws:events:${self:provider.region}:${aws:accountId}:rule/appointment-completed-rule
+
+    AppointmentCompletedRule:
+      Type: AWS::Events::Rule
+      Properties:
+        Name: appointment-completed-rule
+        EventPattern:
+          source:
+            - "appointment.service"
+          detail-type:
+            - "AppointmentCompleted"
+        Targets:
+          - Arn: !GetAtt AppointmentConfirmationQueue.Arn
+            Id: "SendToConfirmationQueue"
